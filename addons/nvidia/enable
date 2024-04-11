@@ -77,7 +77,7 @@ def deploy_gpu_operator(
             "enabled": ("true" if driver == "operator" else "false"),
         },
         "toolkit": {
-            "enabled": "true",
+            "enabled": ("true" if not toolkit_version == "host" else "false"),
             "env": [
                 {"name": "CONTAINERD_CONFIG", "value": CONTAINERD_TOML.as_posix()},
                 {"name": "CONTAINERD_SOCKET", "value": CONTAINERD_SOCKET.as_posix()},
@@ -88,7 +88,7 @@ def deploy_gpu_operator(
             ],
         },
     }
-    if toolkit_version is not None:
+    if toolkit_version not in [None, "host"]:
         helm_config["toolkit"]["version"] = toolkit_version
 
     for arg in helm_set:
