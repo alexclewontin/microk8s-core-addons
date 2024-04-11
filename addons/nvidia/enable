@@ -20,6 +20,14 @@ MICROK8S_ENABLE = SNAP / "microk8s-enable.wrapper"
 CONTAINERD_SOCKET = SNAP_COMMON / "run" / "containerd.sock"
 CONTAINERD_TOML = SNAP_CURRENT / "args" / "containerd-template.toml"
 
+def isStrict():
+    """Return true if we are on a strict snap"""
+    snap_yaml = pathlib.Path(os.path.expandvars("$SNAP/meta/snap.yaml"))
+    with open(snap_yaml, "r") as file:
+        for line_number, line in enumerate(file, start=1):
+            if "confinement" in line and "strict" in line:
+                return True
+    return False
 
 def deploy_network_operator(version: str, helm_set: list, helm_values: list):
     click.echo("Deploy NVIDIA Network operator")
@@ -210,6 +218,15 @@ def main(
     if not set_as_default_runtime and gpu_operator_set_as_default_runtime:
         click.echo("WARNING: --set-as-default-runtime is deprecated, please use --gpu-operator-toolkit-version instead")
         gpu_operator_set_as_default_runtime = set_as_default_runtime
+
+    if isStrict():
+        if gpu_operator_driver == "operator":
+            click.echo("ERROR: --gpu-operator-driver=host is required when Microk8s is installed in strict confinement")
+            sys.exit(1)
+
+        if gpu_operator_toolkit_version == "host":
+            click.echo("ERROR: --gpu-operator-toolkit-version=host is required when Microk8s is installed in strict confinement")
+            sys.exit(1)
 
     # set default values
     if not gpu_operator_version:
